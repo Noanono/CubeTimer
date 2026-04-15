@@ -53,7 +53,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                 @forelse($recentSolves as $i => $solve)
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 {{ $solve->dnf ? 'opacity-60' : '' }}">
+                <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors {{ $solve->dnf ? 'opacity-60' : '' }}">
                     <td class="px-4 py-3 text-gray-400">{{ $i + 1 }}</td>
                     <td class="px-4 py-3">
                         <span class="font-mono font-bold

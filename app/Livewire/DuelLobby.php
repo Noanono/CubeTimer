@@ -10,7 +10,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
-#[Title('Duel - Lobby')]
+#[Title('Lobby')]
 class DuelLobby extends Component
 {
     public string $puzzleType = '333';
