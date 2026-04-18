@@ -21,22 +21,40 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
-echo "🔨 Build des images..."
+# ===============================================
+# 1. Installation des dépendances npm
+# ===============================================
+echo "📦 Installation des dépendances npm..."
+npm ci
+
+echo "🔨 Build des assets Vite..."
+npm run build
+
+# ===============================================
+# 2. Build Docker
+# ===============================================
+echo "🐳 Build des images Docker..."
 docker-compose -f docker-compose.prod.yml build --no-cache
 
-echo "🔑 Génération clés Laravel..."
+# ===============================================
+# 3. Configuration Laravel
+# ===============================================
+echo "🔑 Génération des clés Laravel..."
 docker-compose -f docker-compose.prod.yml run --rm app php artisan key:generate --force
 
 echo "📡 Configuration Reverb..."
 docker-compose -f docker-compose.prod.yml run --rm app php artisan reverb:install --append
 
+# ===============================================
+# 4. Démarrage des services
+# ===============================================
 echo "🚀 Démarrage des services..."
 docker-compose -f docker-compose.prod.yml up -d
 
 echo "⏳ Attente de la base de données (10s)..."
 sleep 10
 
-echo "🗄️  Migration..."
+echo "🗄️  Migration de la base de données..."
 docker-compose -f docker-compose.prod.yml exec app php artisan migrate --force
 
 echo ""
