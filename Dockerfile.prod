@@ -1,0 +1,41 @@
+FROM php:8.2-fpm-alpine
+
+# Install only essential extensions
+RUN apk add --no-cache \
+    git \
+    unzip \
+    libzip-dev \
+    icu-dev \
+    && docker-php-ext-install pdo_mysql zip intl opcache \
+    && docker-php-ext-enable opcache
+
+# Install Node.js (LTS)
+RUN apk add --no-cache nodejs npm
+
+# Create app directory
+WORKDIR /var/www
+
+# Copy composer files and install deps
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+# Copy application code
+COPY . .
+
+# Install Node.js dependencies and build assets
+RUN npm ci --only=production \
+    && npm run build \
+    && npm cache clean --force
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 775 storage bootstrap/cache
+
+# Expose port
+EXPOSE 8000
+
+# Switch to non-root user
+USER www-data
+
+# Start PHP-FPM
+CMD ["php-fpm"]

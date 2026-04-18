@@ -17,11 +17,17 @@ class ScrambleController extends Controller
     {
         $puzzle = $request->query('puzzle', '333');
 
+        // Strict validation of puzzle type
         if (! in_array($puzzle, $this->validPuzzles, true)) {
             return response()->json(['message' => 'Type de puzzle invalide.'], 422);
         }
 
+        // Validate seed if provided (alphanumeric only, reasonable length)
         $seed = $request->query('seed', '');
+        if ($seed && ! preg_match('/^[a-zA-Z0-9]{1,32}$/', $seed)) {
+            return response()->json(['message' => 'Seed invalide.'], 422);
+        }
+
         $seedJs = $seed ? "cstimer.setSeed('$seed');" : '';
 
         $script = <<<JS
@@ -45,7 +51,10 @@ class ScrambleController extends Controller
         console.log(JSON.stringify({ scramble, svgImage, puzzleType: '{$puzzle}' }));
         JS;
 
-        $result = Process::path(base_path())->run(['node', '-e', $script]);
+        // Add timeout to prevent hanging processes
+        $result = Process::path(base_path())
+            ->timeout(10) // 10 second timeout
+            ->run(['node', '-e', $script]);
 
         if (! $result->successful()) {
             return response()->json([
@@ -53,9 +62,23 @@ class ScrambleController extends Controller
             ], 500);
         }
 
-        $data = json_decode(trim($result->output()), true);
+        $output = trim($result->output());
+        if (empty($output)) {
+            return response()->json([
+                'message' => 'Réponse vide du générateur de mélanges.',
+            ], 500);
+        }
 
-        if (! $data) {
+        $data = json_decode($output, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($data)) {
+            return response()->json([
+                'message' => 'Réponse invalide du générateur de mélanges.',
+            ], 500);
+        }
+
+        // Validate response structure
+        if (! isset($data['scramble']) || ! is_string($data['scramble'])) {
             return response()->json([
                 'message' => 'Réponse invalide du générateur de mélanges.',
             ], 500);

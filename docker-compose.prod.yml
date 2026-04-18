@@ -1,89 +1,34 @@
+version: '3.8'
+
 services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      - APP_ENV=${APP_ENV}
-      - APP_DEBUG=${APP_DEBUG}
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - REVERB_APP_ID=${REVERB_APP_ID}
-      - REVERB_APP_KEY=${REVERB_APP_KEY}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
-      - REVERB_HOST=${REVERB_HOST}
-      - REVERB_PORT=${REVERB_PORT}
-      - REVERB_SCHEME=${REVERB_SCHEME}
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - .:/var/www/html
-      - ./storage:/var/www/html/storage
-    networks:
-      - cube-network
-
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
+      dockerfile: Dockerfile.prod
     ports:
-      - "80:80"
-    volumes:
-      - .:/var/www/html
-      - ./storage:/var/www/html/storage
-      - ./deployment/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - app
-    networks:
-      - cube-network
-
-  reverb:
-    image: laravel/reverb:latest
-    restart: unless-stopped
+      - "8000:8000"
     environment:
-      - APP_ENV=${APP_ENV}
-      - DB_HOST=db
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
+      - DB_DATABASE=cubetimer
+      - DB_USERNAME=cubetimer
       - DB_PASSWORD=${DB_PASSWORD}
-      - REVERB_APP_ID=${REVERB_APP_ID}
-      - REVERB_APP_KEY=${REVERB_APP_KEY}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
-      - REVERB_HOST=${REVERB_HOST}
-      - REVERB_PORT=${REVERB_PORT}
-      - REVERB_SCHEME=http
-      - REVERB_SERVER_ENABLED=true
     depends_on:
-      - app
-    networks:
-      - cube-network
-
-  db:
-    image: mariadb:11
+      - mysql
     restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${DB_DATABASE}
-      MARIADB_USER: ${DB_USERNAME}
-      MARIADB_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - cube-network
 
-networks:
-  cube-network:
-    driver: bridge
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=cubetimer
+      - MYSQL_USER=cubetimer
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
 
 volumes:
-  db_data:
+  mysql_data:

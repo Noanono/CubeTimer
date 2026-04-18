@@ -13,18 +13,20 @@ use Livewire\Component;
 class Timer extends Component
 {
     public string $puzzleType = '333';
+
     public string $scramble = '';
+
     public ?int $lastTimeMs = null;
 
     public array $puzzleTypes = [
-        '333'    => '3x3x3',
-        '222so'  => '2x2x2',
+        '333' => '3x3x3',
+        '222so' => '2x2x2',
         '444wca' => '4x4x4',
         '555wca' => '5x5x5',
-        'pyrso'  => 'Pyraminx',
-        'mgmp'   => 'Megaminx',
-        'skbso'  => 'Skewb',
-        'sqrs'   => 'Square-1',
+        'pyrso' => 'Pyraminx',
+        'mgmp' => 'Megaminx',
+        'skbso' => 'Skewb',
+        'sqrs' => 'Square-1',
     ];
 
     public function updatedPuzzleType(): void
@@ -40,13 +42,18 @@ class Timer extends Component
             return;
         }
 
+        // Valider que le puzzle_type est autorisé
+        if (! array_key_exists($this->puzzleType, $this->puzzleTypes)) {
+            return;
+        }
+
         Solve::create([
-            'user_id'     => Auth::id(),
+            'user_id' => Auth::id(),
             'puzzle_type' => $this->puzzleType,
-            'scramble'    => $this->scramble,
-            'time_ms'     => $timeMs,
-            'dnf'         => $dnf,
-            'plus2'       => $plus2,
+            'scramble' => $this->scramble,
+            'time_ms' => $timeMs,
+            'dnf' => $dnf,
+            'plus2' => $plus2,
         ]);
 
         $this->lastTimeMs = $timeMs;
@@ -56,9 +63,10 @@ class Timer extends Component
 
     public function formatLastTime(int $ms): string
     {
-        $minutes    = intdiv($ms, 60000);
-        $seconds    = intdiv($ms % 60000, 1000);
+        $minutes = intdiv($ms, 60000);
+        $seconds = intdiv($ms % 60000, 1000);
         $hundredths = intdiv($ms % 1000, 10);
+
         return $minutes > 0
             ? sprintf('%d:%02d.%02d', $minutes, $seconds, $hundredths)
             : sprintf('%d.%02d', $seconds, $hundredths);
