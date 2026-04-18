@@ -19,8 +19,8 @@ class Solve extends Model
     ];
 
     protected $casts = [
-        'dnf'    => 'boolean',
-        'plus2'  => 'boolean',
+        'dnf' => 'boolean',
+        'plus2' => 'boolean',
         'time_ms' => 'integer',
     ];
 
@@ -34,6 +34,7 @@ class Solve extends Model
         if ($this->dnf) {
             return null;
         }
+
         return $this->plus2 ? $this->time_ms + 2000 : $this->time_ms;
     }
 
@@ -43,12 +44,13 @@ class Solve extends Model
             return 'DNF';
         }
         $ms = $this->getEffectiveTimeMs();
-        $minutes  = intdiv($ms, 60000);
-        $seconds  = intdiv($ms % 60000, 1000);
+        $minutes = intdiv($ms, 60000);
+        $seconds = intdiv($ms % 60000, 1000);
         $hundredths = intdiv(($ms % 1000), 10);
         $result = $minutes > 0
             ? sprintf('%d:%02d.%02d', $minutes, $seconds, $hundredths)
             : sprintf('%d.%02d', $seconds, $hundredths);
-        return $this->plus2 ? $result . '+' : $result;
+
+        return $this->plus2 ? $result.'+' : $result;
     }
 }
