@@ -8,7 +8,8 @@ RUN apk add --no-cache \
     git \
     unzip \
     libzip-dev \
-    icu-data \
+    icu \
+    libicu-dev \
     sqlite-dev \
     && docker-php-ext-install pdo pdo_mysql pdo_sqlite zip intl opcache \
     && npm install -g npm@latest
