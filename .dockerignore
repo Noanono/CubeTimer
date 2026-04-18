@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+.cursor
+.nova
+
+# Laravel/Temp
+.env
+.env.backup
+.env.production
+.env.local
+.phpunit.result.cache
+.phpactor.json
+
+# Dependencies (installed in container)
+node_modules
+/vendor
+
+# Build outputs
+public/build
+public/hot
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+
+# Tests
+tests
+phpunit.xml
+
+# Docker
+docker-compose.yml
+docker-compose.prod.yml
+Dockerfile
+.dockerignore
+deployment
+
+# Misc
+*.log
+auth.json
+Homestead.json
+Homestead.yaml
+Thumbs.db
+.DS_Store
