@@ -267,7 +267,7 @@ fi
 # Create Dockerfile.app if it doesn't exist
 if [ ! -f "Dockerfile.app" ]; then
     cat > Dockerfile.app << 'EOF'
-FROM php:8.2-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -361,7 +361,7 @@ fi
 # Create Dockerfile.reverb if it doesn't exist
 if [ ! -f "Dockerfile.reverb" ]; then
     cat > Dockerfile.reverb << 'EOF'
-FROM php:8.2-cli
+FROM php:8.4-cli
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
