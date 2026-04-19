@@ -90,6 +90,10 @@ services:
       dockerfile: Dockerfile.reverb
     ports:
       - "8081:8081"
+    volumes:
+      - ./:/var/www/html
+      - ./storage:/var/www/html/storage
+      - ./bootstrap/cache:/var/www/html/bootstrap/cache
     environment:
       - APP_NAME=${APP_NAME:-Laravel}
       - APP_ENV=${APP_ENV:-local}

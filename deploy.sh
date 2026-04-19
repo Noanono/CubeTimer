@@ -236,26 +236,30 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     restart: unless-stopped
 
-  # Reverb WebSocket Server
-  reverb:
-    build:
-      context: .
-      dockerfile: Dockerfile.reverb
-    ports:
-      - "8081:8081"
-    environment:
-      - APP_NAME=${APP_NAME:-Laravel}
-      - APP_ENV=${APP_ENV:-local}
-      - BROADCAST_DRIVER=pusher
-      - PUSHER_APP_ID=${REVERB_APP_ID}
-      - PUSHER_KEY=${REVERB_APP_KEY}
-      - PUSHER_SECRET=${REVERB_APP_SECRET}
-      - PUSHER_HOST=${REVERB_HOST:-reverb}
-      - PUSHER_PORT=${REVERB_PORT:-8081}
-      - PUSHER_SCHEME=${REVERB_SCHEME:-http}
-    depends_on:
-      - redis
-    restart: unless-stopped
+   # Reverb WebSocket Server
+   reverb:
+     build:
+       context: .
+       dockerfile: Dockerfile.reverb
+     ports:
+       - "8081:8081"
+     volumes:
+       - ./:/var/www/html
+       - ./storage:/var/www/html/storage
+       - ./bootstrap/cache:/var/www/html/bootstrap/cache
+     environment:
+       - APP_NAME=${APP_NAME:-Laravel}
+       - APP_ENV=${APP_ENV:-local}
+       - BROADCAST_DRIVER=pusher
+       - PUSHER_APP_ID=${REVERB_APP_ID}
+       - PUSHER_KEY=${REVERB_APP_KEY}
+       - PUSHER_SECRET=${REVERB_APP_SECRET}
+       - PUSHER_HOST=${REVERB_HOST:-reverb}
+       - PUSHER_PORT=${REVERB_PORT:-8081}
+       - PUSHER_SCHEME=${REVERB_SCHEME:-http}
+     depends_on:
+       - redis
+     restart: unless-stopped
 
 volumes:
   db_data:

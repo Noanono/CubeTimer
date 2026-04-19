@@ -11,6 +11,10 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && docker-php-ext-install pcntl bcmath
 
+# Set Laravel environment variables during build
+ENV APP_ENV=local
+ENV APP_DEBUG=true
+
 # Install Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 
@@ -20,8 +24,13 @@ WORKDIR /var/www/html
 # Copy application code
 COPY . .
 
+# Create necessary directories for Laravel cache and set permissions
+RUN mkdir -p storage/framework/{views,cache,testing,sessions} \
+    && mkdir -p bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 # Install PHP dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # Expose port 8081 for Reverb
 EXPOSE 8081
