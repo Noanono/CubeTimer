@@ -19,14 +19,19 @@ if [ ! -f "artisan" ] || [ ! -f "composer.json" ]; then
     exit 1
 fi
 
-# Check for Docker and Docker Compose
+# Check for Docker and Docker Compose (supporting both docker compose and docker-compose)
 if ! command -v docker &> /dev/null; then
     echo -e "${RED}Error: Docker is not installed. Please install Docker first.${NC}"
     exit 1
 fi
 
-if ! command -v docker compose &> /dev/null; then
-    echo -e "${RED}Error: Docker Compose is not installed. Please install Docker Compose v2 plugin.${NC}"
+# Check for docker-compose (standalone) first, then docker compose (v2 plugin)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif command -v docker compose &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo -e "${RED}Error: Docker Compose is not installed. Please install Docker Compose (either as v2 plugin or standalone).${NC}"
     exit 1
 fi
 
@@ -54,21 +59,15 @@ fi
 set_env_value() {
     local key="$1"
     local value="$2"
-    # Create a temporary file to work with
-    local temp_file="/tmp/.env.tmp.$$"
-    
+    # Escape any sed special characters in value
+    local escaped_value=$(printf '%s\n' "$value" | sed -e 's/[\/&]/\\&/g')
     if grep -q "^${key}=" .env; then
         # Key exists, replace value
-        sed "s/^${key}=.*/${key}=${value}/" .env > "$temp_file" && mv "$temp_file" .env
+        sed -i '' "s/^${key}=.*/${key}=${escaped_value}/" .env 2>/dev/null || sed -i "s/^${key}=.*/${key}=${escaped_value}/" .env
     else
-        # Key doesn't exist, append to temporary file then move
-        cat .env > "$temp_file"
-        echo "${key}=${value}" >> "$temp_file"
-        mv "$temp_file" .env
+        # Key doesn't exist, append
+        echo "${key}=${value}" >> .env
     fi
-    
-    # Clean up temp file in case of error
-    rm -f "$temp_file"
 }
 
 # Generate secure secrets if they are using defaults or not set
@@ -398,10 +397,10 @@ fi
 
 # Build and start the containers
 echo -e "${YELLOW}Building Docker images...${NC}"
-docker compose -f docker-compose.home.yml build --no-cache
+$DOCKER_COMPOSE -f docker-compose.home.yml build --no-cache
 
 echo -e "${YELLOW}Starting services...${NC}"
-docker compose -f docker-compose.home.yml up -d
+$DOCKER_COMPOSE -f docker-compose.home.yml up -d
 
 # Wait for services to be healthy (simple sleep, in production you'd want health checks)
 echo -e "${YELLOW}Waiting for services to start...${NC}"
@@ -409,16 +408,16 @@ sleep 15
 
 # Run Laravel initialization
 echo -e "${YELLOW}Initializing Laravel application...${NC}"
-docker compose -f docker-compose.home.yml exec app php artisan key:generate --show
-docker compose -f docker-compose.home.yml exec app php artisan migrate --force
-docker compose -f docker-compose.home.yml exec app php artisan config:cache
-docker compose -f docker-compose.home.yml exec app php artisan route:cache
-docker compose -f docker-compose.home.yml exec app php artisan view:cache
+$DOCKER_COMPOSE -f docker-compose.home.yml exec app php artisan key:generate --show
+$DOCKER_COMPOSE -f docker-compose.home.yml exec app php artisan migrate --force
+$DOCKER_COMPOSE -f docker-compose.home.yml exec app php artisan config:cache
+$DOCKER_COMPOSE -f docker-compose.home.yml exec app php artisan route:cache
+$DOCKER_COMPOSE -f docker-compose.home.yml exec app php artisan view:cache
 
 # Build frontend assets (if Node.js is available in the app container)
 echo -e "${YELLOW}Building frontend assets...${NC}"
-docker compose -f docker-compose.home.yml exec app npm install --no-fund --no-audit
-docker compose -f docker-compose.home.yml exec app npm run build
+$DOCKER_COMPOSE -f docker-compose.home.yml exec app npm install --no-fund --no-audit
+$DOCKER_COMPOSE -f docker-compose.home.yml exec app npm run build
 
 # Display success message
 echo -e "${GREEN}===================================================${NC}"
@@ -430,9 +429,9 @@ echo -e "${YELLOW}Alternative access points:${NC}"
 echo -e "${GREEN}  http://localhost:80${NC}"
 echo -e "${GREEN}  http://<your-server-ip>:80${NC}"
 echo -e "${YELLOW}Management commands:${NC}"
-echo -e "${GREEN}  View logs: docker compose -f docker-compose.home.yml logs -f${NC}"
-echo -e "${GREEN}  Restart: docker compose -f docker-compose.home.yml restart${NC}"
-echo -e "${GREEN}  Update code: git pull && docker compose -f docker-compose.home.yml build app && docker compose -f docker-compose.home.yml up -d app${NC}"
-echo -e "${GREEN}  Rebuild all: docker compose -f docker-compose.home.yml build --no-cache && docker compose -f docker-compose.home.yml up -d${NC}"
+echo -e "${GREEN}  View logs: $DOCKER_COMPOSE -f docker-compose.home.yml logs -f${NC}"
+echo -e "${GREEN}  Restart: $DOCKER_COMPOSE -f docker-compose.home.yml restart${NC}"
+echo -e "${GREEN}  Update code: git pull && $DOCKER_COMPOSE -f docker-compose.home.yml build app && $DOCKER_COMPOSE -f docker-compose.home.yml up -d app${NC}"
+echo -e "${GREEN}  Rebuild all: $DOCKER_COMPOSE -f docker-compose.home.yml build --no-cache && $DOCKER_COMPOSE -f docker-compose.home.yml up -d${NC}"
 echo -e "${YELLOW}Note: For HTTPS, consider adding a reverse proxy like Nginx Proxy Manager or Traefik.${NC}"
 echo -e "${GREEN}===================================================${NC}"
