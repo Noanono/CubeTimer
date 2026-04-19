@@ -1,4 +1,4 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Install only essential extensions
 RUN apk add --no-cache \
@@ -8,6 +8,11 @@ RUN apk add --no-cache \
     icu-dev \
     && docker-php-ext-install pdo_mysql zip intl opcache \
     && docker-php-ext-enable opcache
+
+# Install Composer (using official installer)
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
+    && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
+    && php -r "unlink('composer-setup.php');"
 
 # Install Node.js (LTS)
 RUN apk add --no-cache nodejs npm
