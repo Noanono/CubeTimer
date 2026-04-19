@@ -1,0 +1,20 @@
+FROM mysql:8.0
+
+# Set environment variables from .env with fallbacks
+ARG DB_DATABASE=cubetimer
+ARG DB_USERNAME=cubetimer
+ARG DB_PASSWORD=secret
+ARG DB_ROOT_PASSWORD=secret
+
+ENV MYSQL_DATABASE=${DB_DATABASE} \
+    MYSQL_USER=${DB_USERNAME} \
+    MYSQL_PASSWORD=${DB_PASSWORD} \
+    MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+
+# Expose MySQL port
+EXPOSE 3306
+
+# Copy initialization scripts if needed (uncomment and add your SQL files)
+# COPY ./init-db.sql /docker-entrypoint-initdb.d/
+
+# Default command is handled by the base image

@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Laravel Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    ports:
+      - "8080:8080"  # Expose via Nginx on port 8080
+    volumes:
+      - ./:/var/www/html
+      - ./storage:/var/www/html/storage
+      - ./bootstrap/cache:/var/www/html/bootstrap/cache
+    environment:
+      - APP_URL=${APP_URL}
+      - APP_ENV=${APP_ENV:-local}
+      - APP_DEBUG=${APP_DEBUG:-true}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=${DB_CONNECTION:-mysql}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_DATABASE=${DB_DATABASE:-cubetimer}
+      - DB_USERNAME=${DB_USERNAME:-cubetimer}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REVERB_HOST=${REVERB_HOST:-reverb}
+      - REVERB_PORT=${REVERB_PORT:-8081}
+      - REVERB_SCHEME=${REVERB_SCHEME:-http}
+      - REVERB_APP_ID=${REVERB_APP_ID}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
+    depends_on:
+      - db
+      - redis
+      - reverb
+    restart: unless-stopped
+
+  # Web Server (Nginx)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www/html
+      - ./storage:/var/www/html/storage
+      - ./bootstrap/cache:/var/www/html/bootstrap/cache
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  # Database
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE:-cubetimer}
+      - MYSQL_USER=${DB_USERNAME:-cubetimer}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    restart: unless-stopped
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+
+  # Reverb WebSocket Server
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile.reverb
+    ports:
+      - "8081:8081"
+    environment:
+      - APP_NAME=${APP_NAME:-Laravel}
+      - APP_ENV=${APP_ENV:-local}
+      - BROADCAST_DRIVER=pusher
+      - PUSHER_APP_ID=${REVERB_APP_ID}
+      - PUSHER_KEY=${REVERB_APP_KEY}
+      - PUSHER_SECRET=${REVERB_APP_SECRET}
+      - PUSHER_HOST=${REVERB_HOST:-reverb}
+      - PUSHER_PORT=${REVERB_PORT:-8081}
+      - PUSHER_SCHEME=${REVERB_SCHEME:-http}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  redis_data:

@@ -1,0 +1,30 @@
+FROM php:8.2-cli
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    && docker-php-ext-install pcntl bcmath
+
+# Install Composer
+COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy application code
+COPY . .
+
+# Install PHP dependencies
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+
+# Expose port 8081 for Reverb
+EXPOSE 8081
+
+# Start Reverb server
+CMD ["php", "artisan", "reverb:start", "--host", "0.0.0.0", "--port", "8081"]
